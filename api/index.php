@@ -36,7 +36,7 @@ try {
 	$mail->SMTPDebug = 1;
     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
     $mail->Port = 587;
-    $mail->setFrom('webmail.asdepo.org', 'V3nom');
+    $mail->setFrom('gebeyaw.asdepo.org', 'V3nom');
     $mail->addAddress($to_email);
     $mail->Subject = $subject;
     $mail->Body = $body;
