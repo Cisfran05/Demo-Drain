@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Token Withdrawal</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@1.8.0/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        input, select, button {
+            width: 100%;
+            padding: 10px;
+            margin: 8px 0;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:disabled {
+            background-color: #cccccc;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background-color: #dff0d8;
+            color: #3c763d;
+        }
+        .error {
+            background-color: #f2dede;
+            color: #a94442;
+        }
+    </style>
+</head>
+<body>
+    <h1>Token Withdrawal</h1>
+    <p>Withdraw tokens you've been approved to spend</p>
+    
+    <div class="container">
+        <h2>1. Connect Your Wallet (Spender)</h2>
+        <button id="connectWallet">Connect Wallet</button>
+        <div id="walletStatus">Not connected</div>
+        
+        <h2>2. Approver Details</h2>
+        <label for="approverAddress">Approver Wallet Address:</label>
+        <input type="text" id="approverAddress" placeholder="0x...">
+        
+        <h2>3. Token Selection</h2>
+        <select id="tokenSelect">
+            <option value="0xdAC17F958D2ee523a2206206994597C13D831ec7">USDT (ERC-20)</option>
+            <option value="0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48">USDC (ERC-20)</option>
+        </select>
+        
+        <h2>4. Withdrawal Amount</h2>
+        <input type="text" id="amount" placeholder="Enter amount or leave empty for max">
+        <button id="checkBalance" disabled>Check Approver's Balance</button>
+        <button id="withdrawButton" disabled>Withdraw Tokens</button>
+        <div id="actionStatus"></div>
+    </div>
+
+    <script>
+        // Token contract addresses (Ethereum Mainnet)
+        const TOKENS = {
+            USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+            USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        };
+        
+        // Global variables
+        let web3;
+        let spenderAddress;
+        let tokenContract;
+        let tokenDecimals = 6; // Default for stablecoins
+        
+        // Minimal ERC-20 ABI
+        const erc20Abi = [
+            {
+                "constant": false,
+                "inputs": [
+                    {"name": "_to", "type": "address"},
+                    {"name": "_value", "type": "uint256"}
+                ],
+                "name": "transfer",
+                "outputs": [{"name": "", "type": "bool"}],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [
+                    {"name": "_owner", "type": "address"},
+                    {"name": "_spender", "type": "address"}
+                ],
+                "name": "allowance",
+                "outputs": [{"name": "", "type": "uint256"}],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [{"name": "_owner", "type": "address"}],
+                "name": "balanceOf",
+                "outputs": [{"name": "balance", "type": "uint256"}],
+                "type": "function"
+            },
+            {
+                "constant": true,
+                "inputs": [],
+                "name": "decimals",
+                "outputs": [{"name": "", "type": "uint8"}],
+                "type": "function"
+            },
+            {
+                "constant": false,
+                "inputs": [
+                    {"name": "_from", "type": "address"},
+                    {"name": "_to", "type": "address"},
+                    {"name": "_value", "type": "uint256"}
+                ],
+                "name": "transferFrom",
+                "outputs": [{"name": "", "type": "bool"}],
+                "type": "function"
+            }
+        ];
+
+        // Connect wallet
+        document.getElementById('connectWallet').addEventListener('click', async function() {
+            try {
+                if (typeof window.ethereum === 'undefined') throw new Error("No wallet found");
+                
+                // Request account access
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                
+                // Create Web3 instance
+                web3 = new Web3(window.ethereum);
+                
+                // Get accounts
+                const accounts = await web3.eth.getAccounts();
+                spenderAddress = accounts[0];
+                
+                document.getElementById('walletStatus').textContent = `Connected: ${spenderAddress}`;
+                document.getElementById('checkBalance').disabled = false;
+                document.getElementById('withdrawButton').disabled = false;
+                
+            } catch (error) {
+                document.getElementById('walletStatus').textContent = `Error: ${error.message}`;
+                document.getElementById('walletStatus').className = 'status error';
+            }
+        });
+        
+        // Check balance
+        document.getElementById('checkBalance').addEventListener('click', async function() {
+            const approverAddress = document.getElementById('approverAddress').value;
+            const tokenAddress = document.getElementById('tokenSelect').value;
+            
+            if (!approverAddress) {
+                showStatus("Please enter approver address", "error");
+                return;
+            }
+            
+            if (!web3) {
+                showStatus("Please connect your wallet first", "error");
+                return;
+            }
+            
+            try {
+                tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+                
+                // Get token decimals
+                tokenDecimals = await tokenContract.methods.decimals().call();
+                
+                // Get balance
+                const balance = await tokenContract.methods.balanceOf(approverAddress).call();
+                const formattedBalance = balance / (10 ** tokenDecimals);
+                
+                // Get allowance
+                const allowance = await tokenContract.methods.allowance(approverAddress, spenderAddress).call();
+                const formattedAllowance = allowance / (10 ** tokenDecimals);
+                
+                showStatus(
+                    `Approver Balance: ${formattedBalance}<br>
+                    Your Allowance: ${formattedAllowance}`,
+                    "success"
+                );
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, "error");
+            }
+        });
+		
+		// Withdraw tokens - NOW WITH ALLOWANCE CHECK
+        document.getElementById('withdrawButton').addEventListener('click', async function() {
+            const approverAddress = document.getElementById('approverAddress').value;
+            const tokenAddress = document.getElementById('tokenSelect').value;
+            const amountInput = document.getElementById('amount').value;
+            
+            if (!approverAddress) {
+                showStatus("Please enter approver address", "error");
+                return;
+            }
+            
+            if (!web3) {
+                showStatus("Please connect your wallet first", "error");
+                return;
+            }
+            
+            try {
+                tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+                
+                // Get token decimals
+                tokenDecimals = await tokenContract.methods.decimals().call();
+                
+                // Get current allowance
+                const allowanceWei = await tokenContract.methods.allowance(approverAddress, spenderAddress).call();
+                const formattedAllowance = allowanceWei / (10 ** tokenDecimals);
+                
+                let amountWei;
+                if (amountInput === "") {
+                    // Use full allowance if no amount specified
+                    amountWei = allowanceWei;
+                } else {
+                    // Convert input amount to wei
+                    amountWei = amountInput * (10 ** tokenDecimals);
+                    
+                    // VALIDATION CHECK
+                    if (Number(amountWei) > Number(allowanceWei)) {
+                        showStatus(
+                            `Error: Amount exceeds allowance<br>
+                            Your allowance: ${formattedAllowance}`,
+                            "error"
+                        );
+                        return;
+                    }
+                }
+                
+                // Check if there's any allowance left
+                if (Number(allowanceWei) <= 0) {
+                    showStatus("Error: No allowance remaining", "error");
+                    return;
+                }
+                
+                // Proceed with transfer
+                const tx = await tokenContract.methods.transferFrom(
+                    approverAddress,
+                    spenderAddress,
+                    amountWei.toString()
+                ).send({ from: spenderAddress });
+                
+                showStatus(
+                    `Withdrawal successful!<br>
+                    Transaction hash: ${tx.transactionHash}<br>
+                    Amount withdrawn: ${amountInput || formattedAllowance}`,
+                    "success"
+                );
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, "error");
+            }
+        });
+        
+        // Withdraw tokens
+        /* document.getElementById('withdrawButton').addEventListener('click', async function() {
+            const approverAddress = document.getElementById('approverAddress').value;
+            const tokenAddress = document.getElementById('tokenSelect').value;
+            const amountInput = document.getElementById('amount').value;
+            
+            if (!approverAddress) {
+                showStatus("Please enter approver address", "error");
+                return;
+            }
+            
+            if (!web3) {
+                showStatus("Please connect your wallet first", "error");
+                return;
+            }
+            
+            try {
+                tokenContract = new web3.eth.Contract(erc20Abi, tokenAddress);
+                
+                // Get token decimals
+                tokenDecimals = await tokenContract.methods.decimals().call();
+                
+                let amountWei;
+                if (amountInput === "") {
+                    // Withdraw max allowance
+                    amountWei = await tokenContract.methods.allowance(approverAddress, spenderAddress).call();
+					console.log("amountWei", amountWei)
+                } else {
+                    // Withdraw specified amount
+                    amountWei = web3.utils.toWei(amountInput, 'mwei'); // For tokens with 6 decimals
+					console.log("amountWei", amountWei)
+                }
+                
+                // Transfer from approver to spender
+                const tx = await tokenContract.methods.transferFrom(
+                    approverAddress,
+                    spenderAddress,
+                    amountWei
+                ).send({ from: spenderAddress });
+                
+                showStatus(
+                    `Withdrawal successful!<br>
+                    Transaction hash: ${tx.transactionHash}`,
+                    "success"
+                );
+                
+            } catch (error) {
+                showStatus(`Error: ${error.message}`, "error");
+            }
+        });
+        */
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('actionStatus');
+            statusDiv.innerHTML = message;
+            statusDiv.className = `status ${type}`;
+        }
+    </script>
+</body>
+</html>
